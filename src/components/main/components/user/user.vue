@@ -1,58 +1,100 @@
 <template>
   <div class="user-avator-dropdown">
     <Dropdown @on-click="handleClick">
-      <Badge :dot="!!messageUnreadCount">
-        <Avatar :src="userAvator"/>
-      </Badge>
-      <Icon :size="18" type="md-arrow-dropdown"></Icon>
+      <Button type="text" style="color: gray;text-align: center">
+        <Icon type="ios-person" :size="18"/>
+        <span style="position: relative;top: 2px">  {{nickname}}  </span>
+        <Icon :size="18" type="md-arrow-dropdown"></Icon>
+      </Button>
       <DropdownMenu slot="list">
-        <DropdownItem name="message">
-          消息中心<Badge style="margin-left: 10px" :count="messageUnreadCount"></Badge>
-        </DropdownItem>
+        <DropdownItem name="password">修改密码</DropdownItem>
         <DropdownItem name="logout">退出登录</DropdownItem>
       </DropdownMenu>
     </Dropdown>
+    <Modal v-model="addModal" width="640">
+      <p slot="header" style="text-align:center">
+        <span>修改密码</span>
+      </p>
+      <div>
+        <Form ref="form" :model="formData" :rules="formValidate" :label-width="100" width="540px">
+          <FormItem label="旧密码" prop="oldPassword">
+            <Input v-model.trim="formData.oldPassword" type="password" placeholder="请输入旧密码"/>
+          </FormItem>
+          <FormItem label="新密码" prop="newPassword">
+            <Input v-model.trim="formData.newPassword" type="password" placeholder="请输入新密码"/>
+          </FormItem>
+          <FormItem label="确认密码" prop="confirmPwd">
+            <Input v-model.trim="formData.confirmPwd" type="password" placeholder="请确认新密码"/>
+          </FormItem>
+        </Form>
+      </div>
+      <div slot="footer" style="text-align: center">
+        <Button type="primary" shape="circle" class="radio_len" @click="confirm">提交</Button>
+        <Button type="default" shape="circle" class="radio_len" style="margin-left: 20px" @click="cancel">取消</Button>
+      </div>
+    </Modal>
   </div>
 </template>
 
 <script>
 import './user.less'
-import { mapActions } from 'vuex'
+import { mapActions, mapGetters } from 'vuex'
+
 export default {
   name: 'User',
-  props: {
-    userAvator: {
-      type: String,
-      default: ''
-    },
-    messageUnreadCount: {
-      type: Number,
-      default: 0
+  data () {
+    return {
+      addModal: false,
+      formData: { oldPassword: '', newPassword: '', confirmPwd: '' },
+      formValidate: {
+        oldPassword: [{ required: true, message: '请输入旧密码', trigger: 'blur' }],
+        newPassword: [{ required: true, message: '请输入新密码', trigger: 'blur' }],
+        confirmPwd: [{ required: true, message: '请确认新密码', trigger: 'blur' }]
+      }
     }
   },
   methods: {
     ...mapActions([
       'handleLogOut'
     ]),
-    logout () {
-      this.handleLogOut().then(() => {
-        this.$router.push({
-          name: 'login'
-        })
-      })
-    },
-    message () {
-      this.$router.push({
-        name: 'message_page'
-      })
-    },
     handleClick (name) {
       switch (name) {
-        case 'logout': this.logout()
+        case 'logout':
+          this.handleLogOut().then(res => this.$router.push({ name: 'login' })).catch(err => console.log(err))
           break
-        case 'message': this.message()
+        case 'password':
+          this.addModal = true
           break
       }
+    },
+    cancel () {
+      this.addModal = false
+    },
+    confirm () {
+      this.$refs.form.validate((valid) => {
+        if (valid) {
+          const { oldPassword, newPassword, confirmPwd } = this.formData
+          if (newPassword !== confirmPwd) {
+            this.$Message.warning('确认密码与新密码不一致')
+          }
+          // $get(url.updatePwd, {oldPassword, newPassword}).then(res => {
+          //   if (res.code == 0) {
+          //     this.$Message.success('修改成功');
+          //     this.cancel();
+          //   } else {
+          //     this.$Message.error(`修改失败 [${res.msg}]`);
+          //   }
+          // }).catch(err => console.log(err))
+        }
+      })
+    }
+  },
+  computed: {
+    ...mapGetters(['accountId', 'nickname'])
+  },
+  watch: {
+    addModal (curVal, oldVal) {
+      if (!curVal) this.$refs.form.resetFields()
     }
   }
 }

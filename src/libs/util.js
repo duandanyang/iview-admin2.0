@@ -2,6 +2,8 @@ import Cookies from 'js-cookie'
 // cookie保存的天数
 import config from '@/config'
 import { forEach, hasOneOf, objEqual } from '@/libs/tools'
+import { Spin } from 'iview'
+
 const { title, cookieExpires, useI18n } = config
 
 export const TOKEN_KEY = 'token'
@@ -404,38 +406,58 @@ export const setTitle = (routeItem, vm) => {
  * @param t
  * @returns {*}
  */
-export const showTip = (h, t) => {
-  if (!t) t = "----";
-  return h("div", {attrs: {title: t}}, t)
-};
+export const showTip = (h, t, c = 'black') => {
+  if (!t) t = '----'
+  return h('div', { attrs: { title: t }, style: { color: c } }, t)
+}
 
 /**
  * 时间戳转日期
  * @param timestamp
  * @returns {*}
  */
-export const timestampToTime = (timestamp) => {
-  if (!timestamp) return "----";
-  var date = new Date(timestamp);//时间戳为10位需*1000，时间戳为13位的话不需乘1000
-  var y = date.getFullYear();
-  var m = date.getMonth() + 1;
-  m = m < 10 ? '0' + m : m;
-  var d = date.getDate();
-  d = d < 10 ? ('0' + d) : d;
-  var h = date.getHours();
-  h = h < 10 ? ('0' + h) : h;
-  var i = date.getMinutes();
-  i = i < 10 ? ('0' + i) : i;
-  var s = date.getSeconds();
-  s = s < 10 ? ('0' + s) : s;
-  return y + '-' + m + '-' + d + ' ' + h + ':' + i + ':' + s;
-};
+export const timestampToTime = (timestamp, type = null) => {
+  if (!timestamp) return '----'
+  var date = new Date(timestamp)// 时间戳为10位需*1000，时间戳为13位的话不需乘1000
+  var y = date.getFullYear()
+  var m = date.getMonth() + 1
+  m = m < 10 ? '0' + m : m
+  var d = date.getDate()
+  d = d < 10 ? ('0' + d) : d
+  var h = date.getHours()
+  h = h < 10 ? ('0' + h) : h
+  var i = date.getMinutes()
+  i = i < 10 ? ('0' + i) : i
+  var s = date.getSeconds()
+  s = s < 10 ? ('0' + s) : s
+  let str = y + '-' + m + '-' + d
+  if (!type) str += ' ' + h + ':' + i + ':' + s
+  return str
+}
 export const validateNumber = (rule, value, callback) => {
   if (isNaN(value)) {
-    callback(new Error("请输入数字"));
+    callback(new Error('请输入数字'))
   } else if (value < 0) {
-    callback(new Error("请输入正整数"));
+    callback(new Error('请输入正整数'))
   } else {
     callback()
   }
-};
+}
+
+/** * 加载中效果 ***/
+export const handleSpinCustom = () => {
+  Spin.show({
+    render: (h) => {
+      return h('div', [
+        h('Icon', {
+          style: 'animation: ani-demo-spin 1s linear infinite',
+          props: {
+            type: 'load-c',
+            size: 72
+          }
+        }),
+        h('div', '正在加载中......')
+      ])
+    }
+  })
+}

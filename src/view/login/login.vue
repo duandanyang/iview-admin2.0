@@ -18,6 +18,8 @@
 <script>
 import LoginForm from '_c/login-form'
 import { mapActions } from 'vuex'
+import { handleSpinCustom } from '@/libs/util'
+
 export default {
   components: {
     LoginForm
@@ -28,12 +30,15 @@ export default {
       'getUserInfo'
     ]),
     handleSubmit ({ userName, password }) {
+      handleSpinCustom()
       this.handleLogin({ userName, password }).then(res => {
-        this.getUserInfo().then(res => {
-          this.$router.push({
-            name: this.$config.homeName
-          })
-        })
+        if (res) {
+          this.$Spin.hide()
+          this.$router.push({ name: this.$config.homeName })
+        }
+      }).catch(err => {
+        this.$Spin.hide()
+        console.log(err)
       })
     }
   }

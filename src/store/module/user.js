@@ -10,20 +10,23 @@ import {
   getUnreadCount
 } from '@/api/user'
 import { setToken, getToken } from '@/libs/util'
+import { Message } from 'iview'
 
 export default {
   state: {
     userName: '',
     userId: '',
     avatorImgPath: '',
-    token: getToken(),
     access: '',
     hasGetInfo: false,
     unreadCount: 0,
     messageUnreadList: [],
     messageReadedList: [],
     messageTrashList: [],
-    messageContentStore: {}
+    messageContentStore: {},
+    accountId: '',
+    nickname: '',
+    role: ''
   },
   mutations: {
     setAvator (state, avatorPath) {
@@ -65,12 +68,38 @@ export default {
       const msgItem = state[from].splice(index, 1)[0]
       msgItem.loading = false
       state[to].unshift(msgItem)
+    },
+    setAccountId (state, accountId) {
+      state.accountId = accountId
+      sessionStorage.setItem('accountId', accountId)
+    },
+    setNickname (state, nickname) {
+      state.nickname = nickname
+      sessionStorage.setItem('nickname', nickname)
+    },
+    setRole (state, role) {
+      state.role = role
+      sessionStorage.setItem('role', role)
+      state.access = role
     }
   },
   getters: {
     messageUnreadCount: state => state.messageUnreadList.length,
     messageReadedCount: state => state.messageReadedList.length,
-    messageTrashCount: state => state.messageTrashList.length
+    messageTrashCount: state => state.messageTrashList.length,
+    accountId: state => {
+      state.accountId = state.accountId
+      return sessionStorage.getItem('accountId')
+    },
+    role: state => {
+      state.role = state.role
+      state.access = sessionStorage.getItem('role')
+      return sessionStorage.getItem('role')
+    },
+    nickname: state => {
+      state.nickname = state.nickname
+      return sessionStorage.getItem('nickname')
+    }
   },
   actions: {
     // 登录
@@ -81,9 +110,17 @@ export default {
           userName,
           password
         }).then(res => {
-          const data = res.data
-          commit('setToken', data.token)
-          resolve()
+          let data = res.data
+          if (data && data.code == 0) {
+            const { accountId, username, nickname, role } = data.data
+            commit('setAccountId', accountId)
+            commit('setNickname', nickname)
+            commit('setRole', role)
+            resolve(res)
+          } else {
+            Message.error(data.msg)
+            reject(res)
+          }
         }).catch(err => {
           reject(err)
         })
@@ -92,13 +129,12 @@ export default {
     // 退出登录
     handleLogOut ({ state, commit }) {
       return new Promise((resolve, reject) => {
-        logout(state.token).then(() => {
-          commit('setToken', '')
-          commit('setAccess', [])
+        logout().then(() => {
+          sessionStorage.removeItem('accountId')
+          sessionStorage.removeItem('accountNickname')
+          sessionStorage.removeItem('roleId')
           resolve()
-        }).catch(err => {
-          reject(err)
-        })
+        }).catch(err => reject(err))
         // 如果你的退出登录无需请求接口，则可以直接使用下面三行代码而无需使用logout调用接口
         // commit('setToken', '')
         // commit('setAccess', [])
